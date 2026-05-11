@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: vars
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          DATE="$(date +'%B %Y')"
+          echo "tag=$TAG"        >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE"      >> "$GITHUB_OUTPUT"
+
+      - name: Set Info.plist version
+        run: |
+          /usr/libexec/PlistBuddy \
+            -c "Set :CFBundleShortVersionString ${{ steps.vars.outputs.version }}" \
+            Speedread/Info.plist
+          /usr/libexec/PlistBuddy \
+            -c "Set :CFBundleVersion ${{ github.run_number }}" \
+            Speedread/Info.plist
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build DMG
+        run: ./scripts/dmg.sh
+
+      - name: Rename DMG + measure size
+        id: dmg
+        run: |
+          VERSIONED="build/Speedread-${{ steps.vars.outputs.version }}.dmg"
+          LATEST="build/Speedread.dmg"
+          if [[ ! -f "$VERSIONED" ]]; then
+            echo "Expected $VERSIONED to exist" >&2
+            exit 1
+          fi
+          cp "$VERSIONED" "$LATEST"
+          SIZE_BYTES=$(stat -f%z "$VERSIONED")
+          SIZE_MB=$(awk -v b="$SIZE_BYTES" 'BEGIN { printf "%.1f", b/1024/1024 }')
+          echo "size_mb=$SIZE_MB" >> "$GITHUB_OUTPUT"
+          echo "versioned=$VERSIONED" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST"       >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.vars.outputs.tag }}" \
+            "${{ steps.dmg.outputs.versioned }}" \
+            "${{ steps.dmg.outputs.latest }}" \
+            --title "Speedread ${{ steps.vars.outputs.tag }}" \
+            --generate-notes
+
+      - name: Update marketing site
+        env:
+          VER: ${{ steps.vars.outputs.tag }}
+          SIZE: ${{ steps.dmg.outputs.size_mb }}
+          DATE: ${{ steps.vars.outputs.date }}
+          DMG: Speedread-${{ steps.vars.outputs.version }}.dmg
+        run: |
+          perl -i -pe 's|<!--ver-->[^<]*<!--/ver-->|<!--ver-->$ENV{VER}<!--/ver-->|g' marketing/index.html
+          perl -i -pe 's|<!--size-->[^<]*<!--/size-->|<!--size-->$ENV{SIZE}<!--/size-->|g' marketing/index.html
+          perl -i -pe 's|<!--date-->[^<]*<!--/date-->|<!--date-->$ENV{DATE}<!--/date-->|g' marketing/index.html
+          perl -i -pe 's|<!--dmg-->[^<]*<!--/dmg-->|<!--dmg-->$ENV{DMG}<!--/dmg-->|g' marketing/index.html
+
+      - name: Commit version bump
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Speedread/Info.plist marketing/index.html
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Release ${{ steps.vars.outputs.tag }}: bump version and marketing site"
+            git push origin HEAD:main
+          fi
+
+      - name: Trigger Pages deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run pages.yml --ref main

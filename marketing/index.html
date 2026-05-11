@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Speedread — read at the speed of thought</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: oklch(0.975 0.008 75);
+    --bg-2: oklch(0.955 0.012 75);
+    --ink: oklch(0.18 0.012 60);
+    --ink-2: oklch(0.34 0.012 60);
+    --muted: oklch(0.55 0.010 70);
+    --line: oklch(0.88 0.012 70);
+    --line-2: oklch(0.82 0.014 70);
+    --card: oklch(1 0 0 / .55);
+    --accent: oklch(0.64 0.215 32);     /* punchy red-orange — ORP highlight */
+    --accent-ink: oklch(0.32 0.14 32);
+    --accent-soft: oklch(0.95 0.05 55);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Geist','Helvetica Neue',Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    font-feature-settings:'ss01','cv11';}
+  body{overflow-x:hidden}
+  a{color:inherit}
+  ::selection{background:var(--accent);color:#fff}
+
+  .serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400;letter-spacing:-.005em}
+  .mono{font-family:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+
+  /* ───── grain background ───── */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.04;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:multiply;
+  }
+
+  /* ───── top nav ───── */
+  nav{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    padding:22px 32px;max-width:1120px;margin:0 auto;}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{
+    font-family:'Instrument Serif',serif;font-size:24px;letter-spacing:-.01em;
+    display:inline-flex;align-items:baseline;
+  }
+  .brand .mark em{font-style:normal;color:var(--accent);}
+  .brand .mark .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--accent);transform:translateY(-9px);margin:0 1px;
+  }
+  .brand .ver{font-size:11px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .nav-right{display:flex;gap:24px;align-items:center;font-size:13px;color:var(--ink-2)}
+  .nav-right a{text-decoration:none;color:inherit;opacity:.75;transition:opacity .15s}
+  .nav-right a:hover{opacity:1}
+
+  /* ───── hero ───── */
+  .hero{position:relative;z-index:1;padding:40px 0 80px;}
+  .hero-grid{
+    display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center;
+  }
+  @media (max-width:900px){.hero-grid{grid-template-columns:1fr;gap:40px}}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-2);
+    padding:6px 10px;border:.5px solid var(--line-2);border-radius:999px;
+    background:var(--card);backdrop-filter:blur(8px);
+  }
+  .eyebrow .pulse{
+    width:6px;height:6px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 0 var(--accent);animation:pulse 1.8s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 oklch(0.64 0.215 32 / .55)}
+    70%{box-shadow:0 0 0 10px oklch(0.64 0.215 32 / 0)}
+    100%{box-shadow:0 0 0 0 oklch(0.64 0.215 32 / 0)}
+  }
+
+  h1.title{
+    font-family:'Instrument Serif',Georgia,serif;
+    font-weight:400;
+    font-size:clamp(56px, 7.2vw, 96px);
+    line-height:.96;letter-spacing:-.02em;
+    margin:22px 0 18px;
+    color:var(--ink);
+    text-wrap:balance;
+  }
+  h1.title i{font-style:italic;color:var(--accent)}
+  .sub{
+    font-size:18px;line-height:1.55;color:var(--ink-2);max-width:50ch;
+    margin:0 0 32px;text-wrap:pretty;
+  }
+  .sub abbr{
+    text-decoration:none;
+    border-bottom:1px dotted var(--line-2);
+    cursor:help;font-variant:all-small-caps;letter-spacing:.04em;font-weight:500;
+    color:var(--ink);
+  }
+
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 20px;border-radius:12px;text-decoration:none;
+    font-size:14.5px;font-weight:500;letter-spacing:-.005em;
+    transition:transform .15s ease, box-shadow .2s ease, background .15s;
+    cursor:pointer;border:none;font-family:inherit;
+  }
+  .btn-primary{
+    background:var(--ink);color:var(--bg);
+    box-shadow:0 1px 0 oklch(1 0 0 / .15) inset, 0 8px 24px oklch(0.18 0.012 60 / .25);
+  }
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 1px 0 oklch(1 0 0 / .15) inset, 0 12px 30px oklch(0.18 0.012 60 / .32)}
+  .btn-primary .size{font-family:'Geist Mono',monospace;font-size:11.5px;opacity:.55;margin-left:6px}
+  .btn-ghost{
+    background:transparent;color:var(--ink-2);border:.5px solid var(--line-2);
+  }
+  .btn-ghost:hover{background:var(--card);color:var(--ink)}
+
+  .meta{
+    display:flex;gap:18px;margin-top:22px;font-size:12px;color:var(--muted);
+    font-family:'Geist Mono',monospace;letter-spacing:.01em;
+  }
+  .meta span{display:inline-flex;align-items:center;gap:6px}
+  .meta .dotsep{width:3px;height:3px;border-radius:50%;background:var(--line-2)}
+
+  /* ───── RSVP stage ───── */
+  .rsvp-card{
+    position:relative;
+    aspect-ratio: 5/4;
+    border-radius:22px;
+    background:
+      radial-gradient(120% 80% at 50% 0%, oklch(1 0 0 / .9), oklch(0.96 0.008 75 / .7) 60%, oklch(0.93 0.012 75 / .55));
+    border:.5px solid var(--line);
+    box-shadow:
+      0 1px 0 oklch(1 0 0) inset,
+      0 30px 60px -20px oklch(0.18 0.012 60 / .22),
+      0 10px 30px -10px oklch(0.18 0.012 60 / .14);
+    overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .rsvp-chrome{
+    display:flex;align-items:center;gap:8px;
+    padding:14px 16px;border-bottom:.5px solid var(--line);
+  }
+  .rsvp-chrome .tl{display:flex;gap:6px}
+  .rsvp-chrome .tl i{width:11px;height:11px;border-radius:50%;background:oklch(0.86 0.01 70)}
+  .rsvp-chrome .title-bar{
+    flex:1;text-align:center;font-family:'Geist Mono',monospace;font-size:11px;
+    color:var(--muted);letter-spacing:.06em;text-transform:uppercase
+  }
+  .rsvp-stage{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    position:relative;padding:24px 32px;
+  }
+  /* Center guide line for ORP */
+  .rsvp-stage::before, .rsvp-stage::after{
+    content:"";position:absolute;left:50%;transform:translateX(-50%);
+    width:1px;background:var(--line-2);
+  }
+  .rsvp-stage::before{top:24px;height:18px}
+  .rsvp-stage::after{bottom:84px;height:18px}
+
+  .rsvp-word{
+    font-family:'Geist Mono',ui-monospace,monospace;
+    font-size:clamp(28px,4.2vw,46px);
+    font-weight:500;
+    line-height:1;
+    color:var(--ink);
+    display:inline-flex;white-space:pre;
+    letter-spacing:-.01em;
+  }
+  .rsvp-word .orp{color:var(--accent)}
+  .rsvp-pre, .rsvp-post{color:var(--ink)}
+  .rsvp-pre{text-align:right}
+
+  .rsvp-progress{
+    position:absolute;left:24px;right:24px;bottom:54px;
+    height:14px;display:flex;align-items:center;cursor:pointer;
+    --pct:0%;
+  }
+  .rsvp-progress .track{
+    position:relative;width:100%;height:3px;background:var(--line);border-radius:2px;overflow:visible;
+  }
+  .rsvp-progress .fill{
+    position:absolute;inset:0;width:var(--pct);height:100%;background:var(--accent);
+    border-radius:2px;transition:width .12s linear;
+  }
+  .rsvp-progress .thumb{
+    position:absolute;top:50%;left:var(--pct);
+    width:11px;height:11px;border-radius:50%;background:var(--accent);
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 0 2px var(--bg), 0 2px 6px oklch(0.18 0.012 60 / .25);
+    opacity:0;transition:opacity .15s ease;
+  }
+  .rsvp-progress:hover .thumb, .rsvp-progress.scrubbing .thumb{opacity:1}
+  .rsvp-progress:hover .track{height:4px}
+  .rsvp-controls{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 18px;border-top:.5px solid var(--line);
+    font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink-2);
+  }
+  .rsvp-controls button{
+    background:transparent;border:.5px solid var(--line-2);border-radius:8px;
+    width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+    color:var(--ink);cursor:pointer;font-family:inherit;font-size:12px;
+    transition:background .12s, transform .1s;
+  }
+  .rsvp-controls button:hover{background:var(--card)}
+  .rsvp-controls button:active{transform:scale(.96)}
+  .rsvp-controls .wpm{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .rsvp-controls input[type=range]{accent-color:var(--accent);width:120px}
+  .rsvp-controls .wpm-num{min-width:42px;text-align:right;color:var(--ink)}
+
+  /* tiny hint above demo */
+  .demo-hint{
+    position:absolute;top:-26px;left:0;font-size:11px;color:var(--muted);
+    font-family:'Geist Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
+  }
+  .demo-wrap{position:relative}
+
+  /* ───── how it works ───── */
+  section.how{padding:80px 0 40px;border-top:.5px solid var(--line)}
+  .section-head{
+    display:flex;align-items:baseline;justify-content:space-between;margin-bottom:48px;gap:24px;flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-family:'Instrument Serif',serif;font-weight:400;
+    font-size:clamp(36px,4.4vw,56px);line-height:1;letter-spacing:-.02em;margin:0;
+  }
+  .section-head h2 i{color:var(--accent);font-style:italic}
+  .section-head p{margin:0;color:var(--muted);max-width:36ch;font-size:14px;line-height:1.6}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:780px){.steps{grid-template-columns:1fr}}
+  .step{
+    background:var(--card);border:.5px solid var(--line);
+    border-radius:18px;padding:28px;backdrop-filter:blur(8px);
+    position:relative;overflow:hidden;
+  }
+  .step .n{
+    font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.08em;
+  }
+  .step h3{
+    font-family:'Instrument Serif',serif;font-weight:400;font-size:28px;
+    margin:14px 0 10px;letter-spacing:-.01em;
+  }
+  .step p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.55}
+  .step .ill{
+    margin-top:22px;height:120px;border:.5px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg, oklch(0.99 0.004 75), var(--bg));
+    display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  }
+
+  /* hotkey illustration */
+  .kbd{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:30px;height:30px;padding:0 8px;
+    border-radius:7px;background:#fff;border:.5px solid var(--line-2);
+    box-shadow:0 1px 0 oklch(0.86 0.01 70), 0 2px 0 oklch(0.86 0.01 70 / .4);
+    font-family:'Geist Mono',monospace;font-size:13px;color:var(--ink);
+    font-weight:500;
+  }
+  .kbd-row{display:inline-flex;gap:6px;align-items:center}
+  .kbd-row .plus{color:var(--muted);font-size:13px}
+  .kbd-x2{margin-left:8px;font-family:'Geist Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.04em}
+
+  /* selection illustration */
+  .sel-illu{font-family:'Geist Mono',monospace;font-size:11px;color:var(--ink-2);line-height:1.6;padding:14px 18px;text-align:left;width:100%;}
+  .sel-illu .hl{background:oklch(0.64 0.215 32 / .22);color:var(--ink);padding:1px 0;border-radius:2px;box-decoration-break:clone}
+
+  /* RSVP mini illu */
+  .mini-rsvp{
+    font-family:'Geist Mono',monospace;font-size:24px;font-weight:500;
+    letter-spacing:-.01em;display:inline-flex;
+  }
+  .mini-rsvp .orp{color:var(--accent)}
+
+  /* ───── install steps ───── */
+  section.install{padding:80px 0;border-top:.5px solid var(--line)}
+  .install-list{
+    display:grid;grid-template-columns:1fr;gap:0;
+    border:.5px solid var(--line);border-radius:18px;overflow:hidden;
+    background:var(--card);backdrop-filter:blur(8px);
+  }
+  .istep{
+    display:grid;grid-template-columns:80px 1fr 280px;gap:32px;
+    padding:28px 32px;border-bottom:.5px solid var(--line);align-items:center;
+  }
+  .istep:last-child{border-bottom:none}
+  @media(max-width:780px){
+    .istep{grid-template-columns:1fr;gap:16px;padding:24px}
+    .istep .ivis{order:3;width:100%}
+  }
+  .istep .num{
+    font-family:'Instrument Serif',serif;font-size:52px;line-height:1;
+    color:var(--accent);font-style:italic;letter-spacing:-.02em;
+  }
+  .istep .body h4{
+    font-family:'Geist',sans-serif;font-weight:600;font-size:17px;margin:0 0 8px;letter-spacing:-.005em;
+  }
+  .istep .body p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.55;max-width:52ch}
+  .istep .body p + p{margin-top:8px}
+  .istep .body code{
+    font-family:'Geist Mono',monospace;font-size:12.5px;
+    background:var(--bg-2);padding:1px 6px;border-radius:5px;border:.5px solid var(--line);
+  }
+  .istep .ivis{
+    height:130px;border-radius:12px;border:.5px solid var(--line);
+    background:linear-gradient(180deg, #fff, var(--bg));
+    display:flex;align-items:center;justify-content:center;
+    position:relative;overflow:hidden;
+  }
+
+  /* DMG illustration */
+  .dmg-illu{display:flex;align-items:center;gap:24px;padding:0 24px}
+  .dmg-app{
+    width:64px;height:64px;border-radius:14px;
+    background:linear-gradient(180deg, oklch(0.96 0.008 75), oklch(0.92 0.012 75));
+    border:.5px solid var(--line-2);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 14px -6px oklch(0.18 0.012 60 / .25);
+    position:relative;
+  }
+  .dmg-app::before{
+    content:"";width:22px;height:22px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 4px oklch(0.64 0.215 32 / .18);
+  }
+  .dmg-arrow{font-family:'Geist Mono',monospace;color:var(--muted);font-size:18px}
+  .dmg-folder{
+    width:64px;height:64px;border-radius:14px;
+    background:linear-gradient(180deg, oklch(0.92 0.018 240), oklch(0.78 0.04 240));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;
+    font-family:'Instrument Serif',serif;font-style:italic;
+    box-shadow:0 6px 14px -6px oklch(0.4 0.06 240 / .35);
+  }
+
+  /* Gatekeeper illustration */
+  .gk-illu{padding:16px 22px;width:100%}
+  .gk-window{
+    background:#fff;border:.5px solid var(--line-2);border-radius:10px;padding:12px 14px;
+    box-shadow:0 4px 12px -4px oklch(0.18 0.012 60 / .15);
+    font-size:11px;color:var(--ink-2);line-height:1.4;font-family:'Geist',sans-serif;
+  }
+  .gk-window .gk-t{font-weight:600;color:var(--ink);margin-bottom:4px;font-size:11.5px}
+  .gk-window .gk-actions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+  .gk-btn{
+    font-size:10px;padding:3px 8px;border-radius:5px;border:.5px solid var(--line-2);
+    background:#fff;color:var(--ink-2);
+  }
+  .gk-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* Accessibility illustration */
+  .ax-illu{padding:16px 22px;width:100%;font-family:'Geist',sans-serif;font-size:11px;}
+  .ax-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 10px;border-radius:7px;background:#fff;border:.5px solid var(--line);
+    margin-bottom:6px;
+  }
+  .ax-row .lab{display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .ax-row .lab .ic{
+    width:18px;height:18px;border-radius:5px;background:var(--accent);
+    display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;
+    font-family:'Instrument Serif',serif;font-style:italic;
+  }
+  .toggle{width:28px;height:16px;border-radius:9px;background:var(--accent);position:relative}
+  .toggle::after{content:"";position:absolute;top:1.5px;right:1.5px;width:13px;height:13px;border-radius:50%;background:#fff;
+    box-shadow:0 1px 2px oklch(0.18 0.012 60 / .3)}
+  .toggle.off{background:var(--line-2)}
+  .toggle.off::after{right:auto;left:1.5px}
+
+  /* ───── caveat ───── */
+  .caveat{
+    margin-top:24px;display:flex;gap:14px;align-items:flex-start;
+    padding:18px 20px;border-radius:14px;background:var(--bg-2);border:.5px solid var(--line);
+  }
+  .caveat .badge{
+    font-family:'Geist Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+    background:var(--ink);color:var(--bg);padding:4px 8px;border-radius:6px;flex-shrink:0;margin-top:2px;
+  }
+  .caveat p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+
+  /* ───── footer ───── */
+  footer{padding:60px 0 40px;border-top:.5px solid var(--line);margin-top:60px}
+  .foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:flex-end}
+  .foot .left .mark{font-family:'Instrument Serif',serif;font-size:32px;line-height:1}
+  .foot .left .mark em{font-style:normal;color:var(--accent)}
+  .foot .left p{margin:8px 0 0;font-size:12px;color:var(--muted);max-width:36ch;line-height:1.55}
+  .foot .right{display:flex;gap:32px;font-family:'Geist Mono',monospace;font-size:11.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .foot .right a{text-decoration:none;color:inherit;opacity:.75}
+  .foot .right a:hover{opacity:1;color:var(--ink)}
+
+  /* utility */
+  .x{display:none}
+</style>
+</head>
+<body>
+
+<nav data-screen-label="01 Nav">
+  <div class="brand">
+    <span class="mark" id="brandMark">sp<em>e</em><span class="dot"></span>edread</span>
+    <span class="ver mono"><!--ver-->v0.1.0<!--/ver--></span>
+  </div>
+  <div class="nav-right">
+    <a href="#install">Install</a>
+    <a href="#how">How it works</a>
+    <a href="https://github.com/TommyBeaton/fast-reader" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</nav>
+
+<header class="hero wrap" data-screen-label="02 Hero">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow"><span class="pulse"></span> macOS 13+ · free &amp; open source</span>
+      <h1 class="title">Read at the<br/>speed of <i>thought.</i></h1>
+      <p class="sub">Speedread is a tiny menu-bar app that flashes your selected text one word at a time — a technique called <abbr title="Rapid Serial Visual Presentation">RSVP</abbr> (rapid serial visual presentation). Your eyes stop scanning. Words come to you. Finish an article in a minute.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/TommyBeaton/fast-reader/releases/latest/download/Speedread.dmg" id="downloadBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Download for macOS
+          <span class="size">.dmg · <!--size-->4.2<!--/size--> MB</span>
+        </a>
+        <a class="btn btn-ghost" href="#install">View install steps</a>
+      </div>
+      <div class="meta">
+        <span>Apple Silicon &amp; Intel</span>
+        <span class="dotsep"></span>
+        <span>macOS 13 Ventura+</span>
+        <span class="dotsep"></span>
+        <span><!--ver-->v0.1.0<!--/ver--> · <!--date-->May 2026<!--/date--></span>
+      </div>
+    </div>
+
+    <div class="demo-wrap">
+      <div class="demo-hint">Live demo ↓</div>
+      <div class="rsvp-card" id="rsvpCard">
+        <div class="rsvp-chrome">
+          <div class="tl"><i></i><i></i><i></i></div>
+          <div class="title-bar">Speedread</div>
+          <div style="width:42px"></div>
+        </div>
+        <div class="rsvp-stage">
+          <div class="rsvp-word" id="rsvpWord">
+            <span class="rsvp-pre"></span><span class="orp"></span><span class="rsvp-post"></span>
+          </div>
+        </div>
+        <div class="rsvp-progress" id="rsvpScrub" role="slider" aria-label="Scrub through words" tabindex="0">
+          <div class="track"><div class="fill" id="rsvpFill"></div><div class="thumb"></div></div>
+        </div>
+        <div class="rsvp-controls">
+          <button id="rsvpPlay" aria-label="Play/Pause">
+            <svg id="rsvpPlayIcon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button id="rsvpRewind" aria-label="Rewind">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6L20 6v12l-8.5-6z"/></svg>
+          </button>
+          <div class="wpm">
+            <span>WPM</span>
+            <input type="range" id="rsvpWpm" min="200" max="900" step="25" value="500">
+            <span class="wpm-num mono" id="rsvpWpmNum">500</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="how wrap" id="how" data-screen-label="03 How it works">
+  <div class="section-head">
+    <h2>Three steps, <i>zero friction.</i></h2>
+    <p>No copy-paste. No new window. Just select, tap, read — wherever you are on macOS.</p>
+  </div>
+
+  <div class="steps">
+    <article class="step">
+      <span class="n mono">01</span>
+      <h3>Select any text</h3>
+      <p>Browser, PDF, Mail, Slack, Notes — anywhere a cursor can land. Speedread lives in the menu bar and reads your current selection.</p>
+      <div class="ill">
+        <div class="sel-illu">
+          The mind processes <span class="hl">words faster than the eye can move between them</span>. Speedread eliminates the saccade by exposing the reader to one word at a time at the reader's…
+        </div>
+      </div>
+    </article>
+
+    <article class="step">
+      <span class="n mono">02</span>
+      <h3>Double-tap the hotkey</h3>
+      <p>Default is <span class="mono" style="font-size:12px">⌘⇧R</span> tapped twice within 400ms — rebindable in Settings. A floating panel appears near your cursor.</p>
+      <div class="ill">
+        <div class="kbd-row">
+          <span class="kbd">⌘</span><span class="plus">+</span><span class="kbd">⇧</span><span class="plus">+</span><span class="kbd">R</span>
+          <span class="kbd-x2 mono">× 2</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="step">
+      <span class="n mono">03</span>
+      <h3>Read</h3>
+      <p>Words flash one at a time at 200–900 WPM with the optimal recognition point highlighted. Space to pause, arrows to scrub, Esc to dismiss.</p>
+      <div class="ill">
+        <div class="mini-rsvp" id="miniRsvp"><span>r</span><span class="orp">e</span><span>ading</span></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="install wrap" id="install" data-screen-label="04 Install">
+  <div class="section-head">
+    <h2>Install in <i>under a minute.</i></h2>
+    <p>The build isn't signed with a paid Apple Developer ID, so macOS will ask you to vouch for it once. Step 3 is the only fiddly bit.</p>
+  </div>
+
+  <div class="install-list">
+
+    <div class="istep">
+      <div class="num">i.</div>
+      <div class="body">
+        <h4>Download the DMG</h4>
+        <p>Grab <code><!--dmg-->Speedread-0.1.0.dmg<!--/dmg--></code> from the latest release. Universal binary — runs natively on Apple Silicon and Intel.</p>
+      </div>
+      <div class="ivis">
+        <div class="dmg-illu" style="padding:0 18px;gap:16px;width:100%;justify-content:center">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div class="dmg-folder" style="background:linear-gradient(180deg,#eaeaea,#cdcdcd);color:var(--ink)">⏷</div>
+            <div class="mono" style="font-size:10px;color:var(--muted)">.dmg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="num">ii.</div>
+      <div class="body">
+        <h4>Drag Speedread into Applications</h4>
+        <p>Open the DMG. The window shows the Speedread icon and an Applications shortcut — drag one onto the other.</p>
+      </div>
+      <div class="ivis">
+        <div class="dmg-illu">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div class="dmg-app"></div>
+            <div class="mono" style="font-size:10px;color:var(--muted)">Speedread</div>
+          </div>
+          <div class="dmg-arrow">→</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div class="dmg-folder">A</div>
+            <div class="mono" style="font-size:10px;color:var(--muted)">Applications</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="num">iii.</div>
+      <div class="body">
+        <h4>First launch: get past Gatekeeper</h4>
+        <p><strong style="color:var(--ink);font-weight:600">Ventura / Sonoma:</strong> right-click Speedread in Applications, choose <em>Open</em>, then confirm in the dialog.</p>
+        <p><strong style="color:var(--ink);font-weight:600">Sequoia / Tahoe (15+):</strong> double-click, dismiss the block, then visit <em>System Settings → Privacy &amp; Security</em> and click <em>Open Anyway</em>.</p>
+      </div>
+      <div class="ivis">
+        <div class="gk-illu">
+          <div class="gk-window">
+            <div class="gk-t">"Speedread" can't be opened</div>
+            <div>Apple could not verify "Speedread" is free of malware.</div>
+            <div class="gk-actions">
+              <span class="gk-btn">Move to Bin</span>
+              <span class="gk-btn primary">Open Anyway</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="istep">
+      <div class="num">iv.</div>
+      <div class="body">
+        <h4>Grant Accessibility permission</h4>
+        <p>Speedread needs Accessibility to read your current selection — without it the panel opens empty. Toggle it on under <em>System Settings → Privacy &amp; Security → Accessibility</em>.</p>
+        <p>That's it — the menu-bar icon appears and your hotkey is live. Select text, double-tap <span class="mono" style="font-size:12px">⌘⇧R</span>, and read.</p>
+      </div>
+      <div class="ivis">
+        <div class="ax-illu">
+          <div class="ax-row">
+            <div class="lab"><span class="ic">S</span> Speedread</div>
+            <div class="toggle"></div>
+          </div>
+          <div class="ax-row">
+            <div class="lab"><span class="ic" style="background:oklch(0.55 0.01 70)">T</span> Terminal</div>
+            <div class="toggle off"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="caveat">
+    <span class="badge">Why?</span>
+    <p>Speedread is an unsigned hobby build — paid Apple Developer IDs cost $99/year. Steps iii and iv go away the moment we ship a signed and notarised release.</p>
+  </div>
+</section>
+
+<footer class="wrap" data-screen-label="05 Footer">
+  <div class="foot">
+    <div class="left">
+      <div class="mark">sp<em>e</em>edread</div>
+      <p>A tiny speed-reader for macOS. Made with caffeine and saccade research.</p>
+    </div>
+    <div class="right">
+      <a href="https://github.com/TommyBeaton/fast-reader">GitHub</a>
+      <a href="https://github.com/TommyBeaton/fast-reader/releases">Releases</a>
+      <a href="https://github.com/TommyBeaton/fast-reader/issues">Issues</a>
+      <a href="https://github.com/TommyBeaton/fast-reader/blob/main/LICENSE">License · MIT</a>
+    </div>
+  </div>
+</footer>
+
+<!-- React + Babel for the Tweaks panel only (the RSVP demo is vanilla JS for snappiness) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script>
+  /* ────────── RSVP DEMO ENGINE ────────── */
+  const DEMO_TEXT =
+    "The mind processes words faster than the eye can move between them. " +
+    "Rapid serial visual presentation removes the saccade and shows you one word at a time. " +
+    "Speedread does exactly this for any selected text on macOS — double-tap a hotkey and a tiny panel flashes words at the speed you set. " +
+    "You can pause, rewind, and adjust on the fly. Most people land comfortably between four hundred and six hundred words per minute.";
+
+  let words = DEMO_TEXT.split(/\s+/).filter(Boolean);
+  window.addEventListener('rsvp:setwords', (e)=>{
+    words = e.detail.words;
+    idx = 0;
+    render();
+  });
+
+  // ORP (optimal recognition point) — Spritz-style: roughly the third letter, biased by length
+  function orpIndex(word){
+    const n = word.length;
+    if (n <= 1) return 0;
+    if (n <= 5) return 1;
+    if (n <= 9) return 2;
+    if (n <= 13) return 3;
+    return 4;
+  }
+
+  const wordEl = document.getElementById('rsvpWord');
+  const preEl = wordEl.querySelector('.rsvp-pre');
+  const orpEl = wordEl.querySelector('.orp');
+  const postEl = wordEl.querySelector('.rsvp-post');
+  const fillEl = document.getElementById('rsvpFill');
+  const scrubEl = document.getElementById('rsvpScrub');
+  const playBtn = document.getElementById('rsvpPlay');
+  const playIcon = document.getElementById('rsvpPlayIcon');
+  const rewindBtn = document.getElementById('rsvpRewind');
+  const wpmInput = document.getElementById('rsvpWpm');
+  const wpmNum = document.getElementById('rsvpWpmNum');
+
+  let idx = 0;
+  let playing = true;
+  let wpm = +wpmInput.value;
+  let timer = null;
+
+  function render(){
+    const w = words[idx] || '';
+    const k = orpIndex(w);
+    preEl.textContent = w.slice(0,k);
+    orpEl.textContent = w.charAt(k) || '';
+    postEl.textContent = w.slice(k+1);
+    const pct = words.length > 1 ? (idx / (words.length-1) * 100) : 0;
+    scrubEl.style.setProperty('--pct', pct.toFixed(2) + '%');
+  }
+
+  function intervalMs(){
+    // base interval + slight extra time on long words (Spritz-ish)
+    const w = words[idx] || '';
+    const base = 60000 / wpm;
+    const lenBoost = w.length > 8 ? base * 0.4 : 0;
+    const punctBoost = /[.,;:!?]$/.test(w) ? base * 0.6 : 0;
+    return base + lenBoost + punctBoost;
+  }
+
+  function tick(){
+    idx++;
+    if (idx >= words.length){ idx = 0; }
+    render();
+    if (playing) timer = setTimeout(tick, intervalMs());
+  }
+
+  function setPlaying(p){
+    playing = p;
+    if (timer){ clearTimeout(timer); timer = null; }
+    playIcon.innerHTML = playing
+      ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>'  // pause
+      : '<path d="M8 5v14l11-7z"/>';                // play
+    if (playing) timer = setTimeout(tick, intervalMs());
+  }
+
+  playBtn.addEventListener('click', ()=> setPlaying(!playing));
+  rewindBtn.addEventListener('click', ()=> {
+    idx = Math.max(0, idx - 10); render();
+  });
+  wpmInput.addEventListener('input', (e)=>{
+    wpm = +e.target.value;
+    wpmNum.textContent = wpm;
+  });
+
+  /* ── scrub bar: click & drag to jump to any word ── */
+  let wasPlaying = false;
+  function scrubFromPointer(clientX){
+    const r = scrubEl.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    idx = Math.round(pct * (words.length - 1));
+    render();
+  }
+  scrubEl.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    scrubEl.setPointerCapture(e.pointerId);
+    scrubEl.classList.add('scrubbing');
+    wasPlaying = playing;
+    if (playing) setPlaying(false);
+    scrubFromPointer(e.clientX);
+  });
+  scrubEl.addEventListener('pointermove', (e)=>{
+    if (scrubEl.classList.contains('scrubbing')) scrubFromPointer(e.clientX);
+  });
+  function endScrub(e){
+    if (!scrubEl.classList.contains('scrubbing')) return;
+    scrubEl.classList.remove('scrubbing');
+    try { scrubEl.releasePointerCapture(e.pointerId); } catch(_){}
+    if (wasPlaying) setPlaying(true);
+  }
+  scrubEl.addEventListener('pointerup', endScrub);
+  scrubEl.addEventListener('pointercancel', endScrub);
+  scrubEl.addEventListener('keydown', (e)=>{
+    if (e.key === 'ArrowLeft')  { idx = Math.max(0, idx - (e.shiftKey?10:1)); render(); }
+    if (e.key === 'ArrowRight') { idx = Math.min(words.length-1, idx + (e.shiftKey?10:1)); render(); }
+    if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+  });
+
+  // Pause when not visible
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(en => setPlaying(en.isIntersecting && playing));
+  }, {threshold:.2});
+
+  // Kick off
+  render();
+  setPlaying(true);
+
+  /* ────────── tiny brand-mark dot color follow ────────── */
+  // (Tweaks may change --accent; nothing else needed.)
+</script>
+
+<script type="text/babel">
+  /* ────────── TWEAKS PANEL ────────── */
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "accent": "#e85d2f",
+    "accentInk": "#7a2912",
+    "accentSoft": "#fbe8dd",
+    "demoText": "default",
+    "headline": "Read at the\nspeed of thought.",
+    "demoWpm": 325
+  }/*EDITMODE-END*/;
+
+  const ACCENT_OPTIONS = [
+    ["#e85d2f","#7a2912","#fbe8dd"],   // current — red-orange
+    ["#2a6fdb","#0d2e63","#dfe9f9"],   // cobalt
+    ["#1f8a5b","#0f3d2b","#dff0e7"],   // forest
+    ["#7a5ae0","#2d1b65","#eae3fb"],   // violet
+    ["#111111","#111111","#e8e8e8"],   // mono
+  ];
+
+  const DEMO_TEXTS = {
+    default: "The mind processes words faster than the eye can move between them. Rapid serial visual presentation removes the saccade and shows you one word at a time. Speedread does exactly this for any selected text on macOS — double-tap a hotkey and a tiny panel flashes words at the speed you set. You can pause, rewind, and adjust on the fly. Most people land comfortably between four hundred and six hundred words per minute.",
+    moby:    "Call me Ishmael. Some years ago — never mind how long precisely — having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.",
+    paul:    "Make something people want. Live in the future, then build what's missing. The way to get startup ideas is not to try to think of startup ideas. It's to look for problems, preferably problems you have yourself.",
+    docs:    "To install Speedread, download the latest DMG, drag the app into your Applications folder, and grant Accessibility permission on first launch. The menu-bar icon will appear once the hotkey monitor is live."
+  };
+
+  function applyAccent(palette){
+    const root = document.documentElement.style;
+    root.setProperty('--accent', palette[0]);
+    root.setProperty('--accent-ink', palette[1]);
+    root.setProperty('--accent-soft', palette[2]);
+  }
+
+  function applyDemoText(key){
+    // Restart the demo engine with new text by mutating the global word list
+    const text = DEMO_TEXTS[key] || DEMO_TEXTS.default;
+    window.__rsvpReset && window.__rsvpReset(text);
+  }
+
+  function App(){
+    const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+    React.useEffect(()=>{
+      applyAccent([t.accent, t.accentInk, t.accentSoft]);
+    },[t.accent, t.accentInk, t.accentSoft]);
+
+    React.useEffect(()=>{ applyDemoText(t.demoText); },[t.demoText]);
+
+    React.useEffect(()=>{
+      const wpmInput = document.getElementById('rsvpWpm');
+      const wpmNum = document.getElementById('rsvpWpmNum');
+      if (wpmInput && +wpmInput.value !== +t.demoWpm){
+        wpmInput.value = t.demoWpm;
+        wpmInput.dispatchEvent(new Event('input', {bubbles:true}));
+        if (wpmNum) wpmNum.textContent = t.demoWpm;
+      }
+    },[t.demoWpm]);
+
+    return (
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Brand colour" />
+        <TweakColor
+          label="Accent palette"
+          value={[t.accent, t.accentInk, t.accentSoft]}
+          options={ACCENT_OPTIONS}
+          onChange={(v)=> setTweak({accent:v[0], accentInk:v[1], accentSoft:v[2]})}
+        />
+        <TweakSection label="Hero demo" />
+        <TweakSelect
+          label="Passage"
+          value={t.demoText}
+          options={[
+            {value:'default', label:'About speed-reading'},
+            {value:'moby',    label:'Moby-Dick'},
+            {value:'paul',    label:'Paul Graham'},
+            {value:'docs',    label:'Install docs'},
+          ]}
+          onChange={(v)=> setTweak('demoText', v)}
+        />
+        <TweakSlider
+          label="Demo WPM"
+          value={t.demoWpm}
+          min={200} max={900} step={25}
+          onChange={(v)=> setTweak('demoWpm', v)}
+        />
+      </TweaksPanel>
+    );
+  }
+
+  // Mount Tweaks
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  ReactDOM.createRoot(root).render(<App/>);
+</script>
+
+<script>
+  /* Expose RSVP reset for the Tweaks panel */
+  (function(){
+    const origWords = window.__words || null;
+    window.__rsvpReset = function(text){
+      // Build new word list and swap in-place
+      const newWords = text.split(/\s+/).filter(Boolean);
+      // Directly mutate the closure's `words` by reassigning via a known global
+      // Simpler approach: reload demo by replacing array contents
+      // We can't access the closure array, so use a custom event hook:
+      const ev = new CustomEvent('rsvp:setwords', {detail:{words:newWords}});
+      window.dispatchEvent(ev);
+    };
+  })();
+</script>
+</body>
+</html>
