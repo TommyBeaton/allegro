@@ -34,10 +34,10 @@ jobs:
         run: |
           /usr/libexec/PlistBuddy \
             -c "Set :CFBundleShortVersionString ${{ steps.vars.outputs.version }}" \
-            Speedread/Info.plist
+            Allegro/Info.plist
           /usr/libexec/PlistBuddy \
             -c "Set :CFBundleVersion ${{ github.run_number }}" \
-            Speedread/Info.plist
+            Allegro/Info.plist
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -48,8 +48,8 @@ jobs:
       - name: Rename DMG + measure size
         id: dmg
         run: |
-          VERSIONED="build/Speedread-${{ steps.vars.outputs.version }}.dmg"
-          LATEST="build/Speedread.dmg"
+          VERSIONED="build/Allegro-${{ steps.vars.outputs.version }}.dmg"
+          LATEST="build/Allegro.dmg"
           if [[ ! -f "$VERSIONED" ]]; then
             echo "Expected $VERSIONED to exist" >&2
             exit 1
@@ -68,7 +68,7 @@ jobs:
           gh release create "${{ steps.vars.outputs.tag }}" \
             "${{ steps.dmg.outputs.versioned }}" \
             "${{ steps.dmg.outputs.latest }}" \
-            --title "Speedread ${{ steps.vars.outputs.tag }}" \
+            --title "Allegro ${{ steps.vars.outputs.tag }}" \
             --generate-notes
 
       - name: Update marketing site
@@ -76,7 +76,7 @@ jobs:
           VER: ${{ steps.vars.outputs.tag }}
           SIZE: ${{ steps.dmg.outputs.size_mb }}
           DATE: ${{ steps.vars.outputs.date }}
-          DMG: Speedread-${{ steps.vars.outputs.version }}.dmg
+          DMG: Allegro-${{ steps.vars.outputs.version }}.dmg
         run: |
           perl -i -pe 's|<!--ver-->[^<]*<!--/ver-->|<!--ver-->$ENV{VER}<!--/ver-->|g' marketing/index.html
           perl -i -pe 's|<!--size-->[^<]*<!--/size-->|<!--size-->$ENV{SIZE}<!--/size-->|g' marketing/index.html
@@ -91,7 +91,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add Speedread/Info.plist marketing/index.html
+          git add Allegro/Info.plist marketing/index.html
           if git diff --staged --quiet; then
             echo "No marketing/Info.plist changes — skipping PR."
             exit 0

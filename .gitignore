@@ -13,7 +13,10 @@ xcuserdata/
 *.xccheckout
 
 ## XcodeGen output — regenerate locally
-Speedread.xcodeproj/
+Allegro.xcodeproj/
+
+## Local hand-off patches / scratch dirs — never committed
+handoff-patch/
 
 ## SwiftPM
 .build/
