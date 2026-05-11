@@ -6,6 +6,17 @@ Trigger: press a configurable hotkey **twice** in quick succession (default `⌘
 
 > **v1 status:** RSVP mode only. Bionic / Jiffy and chunked modes are queued for v2.
 
+## Install (from a release DMG)
+
+1. Download `Speedread-<version>.dmg` from the [Releases](../../releases) page.
+2. Open it and drag **Speedread** into **Applications**.
+3. First launch: because the build isn't signed with an Apple Developer ID, Gatekeeper will block it. Pick one:
+   - **macOS 13 / 14 (Ventura, Sonoma):** right-click Speedread in Applications → **Open** → confirm.
+   - **macOS 15+ (Sequoia, Tahoe):** double-click and dismiss the warning, then go to **System Settings → Privacy & Security**, scroll to "Speedread was blocked…" and click **Open Anyway**. Launch it once more.
+4. macOS will then ask for **Accessibility** permission — grant it under **System Settings → Privacy & Security → Accessibility**. Speedread needs this to read your text selection.
+
+After that the menu-bar icon appears and the hotkey is live.
+
 ## Build
 
 You need a Mac with Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
