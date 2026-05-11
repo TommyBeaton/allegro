@@ -1,0 +1,78 @@
+name: Speedread
+options:
+  bundleIdPrefix: app.speedread
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
+  LaunchAtLogin:
+    url: https://github.com/sindresorhus/LaunchAtLogin-Modern
+    from: "1.0.0"
+
+targets:
+  Speedread:
+    type: application
+    platform: macOS
+    sources:
+      - path: Speedread
+    resources:
+      - path: Speedread/Resources/Assets.xcassets
+        optional: true
+    info:
+      path: Speedread/Info.plist
+      properties:
+        LSUIElement: true
+        NSHumanReadableCopyright: ""
+        NSAccessibilityUsageDescription: "Speedread needs Accessibility access so it can read the text you've selected (by simulating Cmd+C) when you trigger it."
+        CFBundleDisplayName: Speedread
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.speedread.Speedread
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Speedread/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: KeyboardShortcuts
+      - package: LaunchAtLogin
+        product: LaunchAtLogin
+
+  SpeedreadTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: SpeedreadTests
+    dependencies:
+      - target: Speedread
+    settings:
+      base:
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Speedread.app/Contents/MacOS/Speedread"
+
+schemes:
+  Speedread:
+    build:
+      targets:
+        Speedread: all
+        SpeedreadTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - SpeedreadTests
+    archive:
+      config: Release

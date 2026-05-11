@@ -1,0 +1,29 @@
+## macOS / Xcode
+.DS_Store
+*.swp
+*.swo
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserdatad/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+## XcodeGen output — regenerate locally
+Speedread.xcodeproj/
+
+## SwiftPM
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+## CocoaPods / Carthage / fastlane (not used but ignore anyway)
+Pods/
+Carthage/Build/
+fastlane/report.xml
+fastlane/screenshots
+fastlane/test_output
