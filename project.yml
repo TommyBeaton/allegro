@@ -61,6 +61,8 @@ targets:
       base:
         BUNDLE_LOADER: "$(TEST_HOST)"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Speedread.app/Contents/MacOS/Speedread"
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.speedread.SpeedreadTests
 
 schemes:
   Speedread:
