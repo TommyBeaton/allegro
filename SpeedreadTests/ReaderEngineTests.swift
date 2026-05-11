@@ -65,4 +65,56 @@ final class ReaderEngineTests: XCTestCase {
         e.togglePlayPause()
         XCTAssertEqual(e.state, .paused)
     }
+
+    func testLoadReplacesPreviousText() {
+        let e = ReaderEngine(wpm: 300)
+        e.load("alpha beta gamma delta", autoPlay: false)
+        e.seek(to: 3)
+        XCTAssertEqual(e.currentIndex, 3)
+
+        e.load("one two", autoPlay: false)
+        XCTAssertEqual(e.tokens.count, 2)
+        XCTAssertEqual(e.currentIndex, 0, "currentIndex must reset when new text is loaded")
+        XCTAssertEqual(e.state, .paused)
+    }
+
+    func testSetWPMPreservesIndexAndPlayingState() {
+        let e = ReaderEngine(wpm: 300)
+        e.load("alpha beta gamma delta", autoPlay: false)
+        e.seek(to: 2)
+        e.play()
+        XCTAssertEqual(e.state, .playing)
+        XCTAssertEqual(e.currentIndex, 2)
+
+        e.setWPM(800)
+        XCTAssertEqual(e.wpm, 800)
+        XCTAssertEqual(e.currentIndex, 2, "WPM change must not move the playhead")
+        XCTAssertEqual(e.state, .playing, "WPM change must not interrupt playback")
+        e.pause()
+    }
+
+    func testProgressIsZeroWhenIdle() {
+        let e = ReaderEngine(wpm: 300)
+        XCTAssertEqual(e.progress, 0)
+    }
+
+    func testProgressGrowsWithSeek() {
+        let e = ReaderEngine(wpm: 300)
+        e.load("a b c d e", autoPlay: false)
+        XCTAssertEqual(e.progress, 0, accuracy: 0.0001)
+        e.seek(to: 2)
+        XCTAssertEqual(e.progress, 0.5, accuracy: 0.0001)
+        e.seek(to: 4)
+        XCTAssertEqual(e.progress, 1.0, accuracy: 0.0001)
+    }
+
+    func testCurrentTokenTracksIndex() {
+        let e = ReaderEngine(wpm: 300)
+        e.load("alpha beta gamma", autoPlay: false)
+        XCTAssertEqual(e.currentToken?.text, "alpha")
+        e.seek(to: 1)
+        XCTAssertEqual(e.currentToken?.text, "beta")
+        e.step(by: 1)
+        XCTAssertEqual(e.currentToken?.text, "gamma")
+    }
 }

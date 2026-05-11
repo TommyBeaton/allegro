@@ -36,4 +36,35 @@ final class TokeniserTests: XCTestCase {
             Tokeniser.durationMultiplier(for: "short")
         )
     }
+
+    func testSentenceTerminatorsLongerThanClauseBreaks() {
+        // ! and ? get the sentence-end (×2) multiplier; , ; : only ×1.5.
+        let period = Tokeniser.durationMultiplier(for: "word.")
+        let bang = Tokeniser.durationMultiplier(for: "word!")
+        let question = Tokeniser.durationMultiplier(for: "word?")
+        let semicolon = Tokeniser.durationMultiplier(for: "word;")
+        let colon = Tokeniser.durationMultiplier(for: "word:")
+        XCTAssertEqual(period, bang, accuracy: 0.0001)
+        XCTAssertEqual(period, question, accuracy: 0.0001)
+        XCTAssertEqual(semicolon, colon, accuracy: 0.0001)
+        XCTAssertGreaterThan(period, semicolon)
+    }
+
+    func testMixedWhitespaceSeparators() {
+        let tokens = Tokeniser.tokenise("a\nb\tc  d\r\ne")
+        XCTAssertEqual(tokens.map(\.text), ["a", "b", "c", "d", "e"])
+    }
+
+    func testORPLongestBucket() {
+        // Anything ≥14 characters falls into the orp=4 bucket.
+        XCTAssertEqual(Tokeniser.orpIndex(for: "fourteen-chars"), 4)         // 14 chars
+        XCTAssertEqual(Tokeniser.orpIndex(for: "supercalifragilisticexpialidocious"), 4)
+    }
+
+    func testTokensCarryORPAndMultiplierTogether() {
+        let token = Tokeniser.tokenise("End.").first!
+        XCTAssertEqual(token.text, "End.")
+        XCTAssertEqual(token.orpIndex, 1)             // 4 chars → bucket 2…5
+        XCTAssertEqual(token.baseMultiplier, 2.0, accuracy: 0.0001)
+    }
 }
