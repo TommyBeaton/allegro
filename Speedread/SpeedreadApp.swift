@@ -14,7 +14,7 @@ struct SpeedreadApp: App {
             Divider()
 
             Button("Settings…") {
-                openSettings()
+                delegate.state.openSettings()
             }
             .keyboardShortcut(",", modifiers: .command)
 
@@ -29,15 +29,6 @@ struct SpeedreadApp: App {
 
         Settings {
             SettingsView()
-        }
-    }
-
-    private func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
 }

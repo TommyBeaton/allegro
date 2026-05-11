@@ -7,6 +7,8 @@ enum DefaultsKey {
     static let doubleTapWindowMs = "doubleTapWindowMs"
     static let rewindStep = "rewindStep"
     static let orpColorHex = "orpColorHex"
+    static let autoPlayOnGrab = "autoPlayOnGrab"
+    static let startDelayMs = "startDelayMs"
 }
 
 enum DefaultsValue {
@@ -15,6 +17,8 @@ enum DefaultsValue {
     static let doubleTapWindowMs: Int = 500
     static let rewindStep: Int = 10
     static let orpColorHex: String = "#D6336C"
+    static let autoPlayOnGrab: Bool = true
+    static let startDelayMs: Int = 1500
 }
 
 extension UserDefaults {
@@ -25,6 +29,8 @@ extension UserDefaults {
             DefaultsKey.doubleTapWindowMs: DefaultsValue.doubleTapWindowMs,
             DefaultsKey.rewindStep: DefaultsValue.rewindStep,
             DefaultsKey.orpColorHex: DefaultsValue.orpColorHex,
+            DefaultsKey.autoPlayOnGrab: DefaultsValue.autoPlayOnGrab,
+            DefaultsKey.startDelayMs: DefaultsValue.startDelayMs,
         ])
     }
 }
