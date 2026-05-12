@@ -1,5 +1,8 @@
 import AppKit
 import SwiftUI
+import OSLog
+
+private let settingsLog = Logger(subsystem: "app.allegro.Allegro", category: "settings")
 
 /// Composition root. Owns the engine, hotkey monitor, and panel.
 @MainActor
@@ -34,6 +37,17 @@ final class AppState: ObservableObject {
                 presentText(text)
             } catch SelectionGrabber.GrabError.accessibilityNotTrusted {
                 presentAccessibilityAlert()
+            } catch SelectionGrabber.GrabError.timeout {
+                // The synth-⌘C never made the pasteboard tick. Two
+                // possibilities: the user didn't actually have text
+                // selected, or macOS quietly revoked Accessibility
+                // (granting in Settings doesn't always re-propagate to
+                // a running process). Distinguish them.
+                if !SelectionGrabber.isTrustedSilently() {
+                    presentAccessibilityRevokedAlert()
+                } else {
+                    NSSound.beep()
+                }
             } catch {
                 NSSound.beep()
             }
@@ -54,34 +68,35 @@ final class AppState: ObservableObject {
     /// gap: raises activation policy, sends the show-settings action, then
     /// retries finding the window for a short window (it may not exist
     /// synchronously after the action returns).
-    func openSettings() {
+    /// Called immediately before SwiftUI's `openSettings` action fires.
+    /// Raises the activation policy to `.regular` so the Settings window
+    /// is allowed to become key (an LSUIElement / `.accessory` app can
+    /// show a settings window but it won't focus), then schedules a
+    /// short retry loop that finds the new window, brings it forward,
+    /// and arranges to revert the policy when the user closes it.
+    func prepareSettingsWindow() {
+        settingsLog.info("prepareSettingsWindow called, activationPolicy=\(NSApp.activationPolicy().rawValue, privacy: .public)")
         NSApp.setActivationPolicy(.regular)
-        if #available(macOS 14, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-        }
+        NSApp.activate(ignoringOtherApps: true)
 
-        // The settings window is created asynchronously. Retry a handful of
-        // times over ~300 ms so the first-ever click is as reliable as a
-        // re-open.
         Task { @MainActor in
-            for _ in 0..<6 {
+            for i in 0..<10 {
                 if let win = NSApp.windows.first(where: Self.isSettingsWindow) {
-                    NSApp.activate(ignoringOtherApps: true)
+                    settingsLog.info("retry \(i, privacy: .public): found Settings window")
                     win.makeKeyAndOrderFront(nil)
                     self.observeSettingsClose(win)
                     return
                 }
-                try? await Task.sleep(nanoseconds: 50_000_000) // 50 ms
+                try? await Task.sleep(nanoseconds: 50_000_000)
             }
-            // Window never showed; revert policy so we don't leave a stray Dock icon.
+            settingsLog.error("gave up looking for Settings window after 500ms")
             NSApp.setActivationPolicy(.accessory)
         }
     }
 
     private static func isSettingsWindow(_ w: NSWindow) -> Bool {
-        if let id = w.identifier?.rawValue, id.contains("Settings") || id.contains("preferences") {
+        if let id = w.identifier?.rawValue,
+           id.contains("Settings") || id.contains("preferences") || id == "com_apple_SwiftUI_Settings_window" {
             return true
         }
         return w.title == "Settings" || w.title.contains("Settings")
@@ -102,9 +117,6 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Confirm before terminating — accidentally hitting Quit kills the
-    /// global hotkey, which is the whole point of the app. Users typically
-    /// don't realise menu-bar apps can just be left running.
     func confirmQuit() {
         let alert = NSAlert()
         alert.messageText = "Quit Allegro?"
@@ -133,7 +145,6 @@ final class AppState: ObservableObject {
         startTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delayMs) * 1_000_000)
             guard let self, !Task.isCancelled else { return }
-            // Only auto-play if the user hasn't already touched the controls.
             if self.engine.state == .paused {
                 self.engine.play()
             }
@@ -143,13 +154,26 @@ final class AppState: ObservableObject {
     private func showPanel() {
         if panel == nil {
             let engine = self.engine
-            let view = ReaderRootView(engine: engine) { [weak self] in
-                self?.startTask?.cancel()
-                self?.panel?.orderOut(nil)
+            let newPanel = ReaderPanel(rootView: ReaderRootView(engine: engine) { [weak self] in
+                // Esc / programmatic close path. The system close button
+                // routes through willCloseNotification below instead.
+                self?.panel?.performClose(nil)
+            })
+            NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification,
+                object: newPanel,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.startTask?.cancel()
+                    self?.engine.pause()
+                }
             }
-            panel = ReaderPanel(rootView: view)
+            panel = newPanel
         }
-        panel?.showNearMouse()
+        let raw = UserDefaults.standard.string(forKey: DefaultsKey.openNear) ?? DefaultsValue.openNear
+        let where_ = OpenNear(rawValue: raw) ?? .cursor
+        panel?.show(at: where_)
     }
 
     private func presentAccessibilityAlert() {
@@ -158,6 +182,21 @@ final class AppState: ObservableObject {
         alert.informativeText = "Allegro needs Accessibility access to read the text you have selected. Open System Settings → Privacy & Security → Accessibility and enable Allegro, then try again."
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+    }
+
+    private func presentAccessibilityRevokedAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Accessibility permission was revoked"
+        alert.informativeText = "macOS no longer trusts Allegro to read your text selection. This usually happens after the app was updated — Accessibility needs to be re-enabled and the app relaunched."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                 NSWorkspace.shared.open(url)

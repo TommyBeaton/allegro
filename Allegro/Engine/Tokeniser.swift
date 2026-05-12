@@ -9,6 +9,9 @@ struct Token: Equatable {
 enum Tokeniser {
     /// Split input on whitespace and produce per-token rendering + timing metadata.
     static func tokenise(_ input: String) -> [Token] {
+        let pausePunct = UserDefaults.standard.object(forKey: DefaultsKey.pauseOnPunctuation) as? Bool
+            ?? DefaultsValue.pauseOnPunctuation
+
         let pieces = input
             .split(whereSeparator: { $0.isWhitespace })
             .map(String.init)
@@ -18,13 +21,11 @@ enum Tokeniser {
             return Token(
                 text: raw,
                 orpIndex: orpIndex(for: raw),
-                baseMultiplier: durationMultiplier(for: raw)
+                baseMultiplier: durationMultiplier(for: raw, pauseOnPunctuation: pausePunct)
             )
         }
     }
 
-    /// Spritz-style optimal recognition point heuristic.
-    /// The ORP is the pivot character the eye fixates on.
     static func orpIndex(for word: String) -> Int {
         let n = word.count
         switch n {
@@ -36,12 +37,13 @@ enum Tokeniser {
         }
     }
 
-    /// Per-token delay multiplier — longer dwell on long words and punctuation breaks.
-    static func durationMultiplier(for word: String) -> Double {
+    /// Per-token delay multiplier — longer dwell on long words and, when enabled,
+    /// punctuation breaks.
+    static func durationMultiplier(for word: String, pauseOnPunctuation: Bool = true) -> Double {
         let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
         var m = 1.0
         if word.count > 8 { m *= 1.3 }
-        if let last = trimmed.last {
+        if pauseOnPunctuation, let last = trimmed.last {
             if last == "," || last == ";" || last == ":" { m *= 1.5 }
             if last == "." || last == "!" || last == "?" { m *= 2.0 }
         }

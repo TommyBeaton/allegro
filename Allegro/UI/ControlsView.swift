@@ -4,7 +4,6 @@ struct ControlsView: View {
     @ObservedObject var engine: ReaderEngine
     @AppStorage(DefaultsKey.rewindStep) private var rewindStep: Int = DefaultsValue.rewindStep
 
-    /// SF Symbol `gobackward.N` only exists for {5,10,15,30,45,60,75,90}.
     private static let validStepSymbols: Set<Int> = [5, 10, 15, 30, 45, 60, 75, 90]
 
     private var rewindIcon: String {
@@ -18,6 +17,8 @@ struct ControlsView: View {
     var body: some View {
         VStack(spacing: 8) {
             scrubBar
+                .tint(.allegroAccent)
+
             HStack(spacing: 12) {
                 Button {
                     engine.step(by: -rewindStep)
@@ -32,6 +33,7 @@ struct ControlsView: View {
                 } label: {
                     Image(systemName: engine.state == .playing ? "pause.fill" : "play.fill")
                         .font(.title3)
+                        .foregroundStyle(Color.allegroAccent)
                 }
                 .buttonStyle(.borderless)
                 .keyboardShortcut(.space, modifiers: [])
@@ -46,23 +48,27 @@ struct ControlsView: View {
 
                 Divider().frame(height: 16)
 
-                HStack(spacing: 6) {
-                    Text("WPM")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Slider(
-                        value: Binding(
-                            get: { Double(engine.wpm) },
-                            set: { engine.setWPM(Int($0)) }
-                        ),
-                        in: 100...1000,
-                        step: 10
-                    )
-                    .frame(width: 120)
-                    Text("\(engine.wpm)")
-                        .font(.caption.monospacedDigit())
-                        .frame(width: 36, alignment: .leading)
-                }
+                // Horizontal small-caps WPM label reads as a single unit
+                // and saves the vertical space the stacked W/P/M used.
+                Text("WPM")
+                    .font(.system(size: 9.5, weight: .semibold))
+                    .tracking(1.4)
+                    .foregroundStyle(.secondary)
+
+                Slider(
+                    value: Binding(
+                        get: { Double(engine.wpm) },
+                        set: { engine.setWPM(Int($0)) }
+                    ),
+                    in: 100...1000,
+                    step: 10
+                )
+                .tint(.allegroAccent)
+                .frame(width: 120)
+
+                Text("\(engine.wpm)")
+                    .font(.caption.monospacedDigit())
+                    .frame(width: 36, alignment: .leading)
 
                 Spacer()
 

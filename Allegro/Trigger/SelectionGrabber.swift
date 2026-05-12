@@ -14,7 +14,11 @@ enum SelectionGrabber {
     /// Returns the selected text, or throws if nothing was selected within
     /// `timeout` seconds. Accessibility permission is required to post the
     /// synthetic Cmd+C; we check it up-front and prompt the user once.
-    static func grab(timeout: TimeInterval = 0.2) async throws -> String {
+    ///
+    /// 350 ms is generous on purpose — some apps (Notion, Safari with heavy
+    /// pages, Microsoft Office) need >100 ms to respond to a synthesised
+    /// ⌘C, which the previous 200 ms cap was racing.
+    static func grab(timeout: TimeInterval = 0.35) async throws -> String {
         guard ensureAccessibilityTrusted() else {
             throw GrabError.accessibilityNotTrusted
         }
@@ -53,6 +57,13 @@ enum SelectionGrabber {
         let prompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         let options: CFDictionary = [prompt: true] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
+    }
+
+    /// Live trust status without surfacing the system prompt. Used for
+    /// post-failure rechecks so we can tell "no text was selected" apart
+    /// from "permission was just revoked".
+    static func isTrustedSilently() -> Bool {
+        AXIsProcessTrusted()
     }
 
     // MARK: - Cmd+C synthesis

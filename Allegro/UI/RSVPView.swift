@@ -1,22 +1,28 @@
 import SwiftUI
 
 /// Renders the current word with the ORP character coloured and aligned
-/// to a vertical guide line. Slot widths are fixed (longest token in the
-/// stream sets the width) so the ORP never jumps horizontally.
+/// to a vertical guide line.
 struct RSVPView: View {
     @ObservedObject var engine: ReaderEngine
     @AppStorage(DefaultsKey.fontSize) private var fontSize: Double = DefaultsValue.fontSize
+    @AppStorage(DefaultsKey.fontFamily) private var fontFamilyRaw: String = DefaultsValue.fontFamily
     @AppStorage(DefaultsKey.orpColorHex) private var orpColorHex: String = DefaultsValue.orpColorHex
 
-    private var font: Font { .system(size: fontSize, weight: .medium, design: .monospaced) }
+    private var family: FontFamily { FontFamily(rawValue: fontFamilyRaw) ?? .mono }
+    private var font: Font { .system(size: fontSize, weight: .medium, design: family.design) }
     private var orpColor: Color { Color(hex: orpColorHex) ?? .pink }
+
+    /// Guide line is faint while reading (so words feel uninterrupted), and more
+    /// visible when paused (so the user can locate the ORP).
+    private var guideOpacity: Double {
+        engine.state == .playing ? 0.06 : 0.18
+    }
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // Vertical guide line where the ORP character sits.
                 Rectangle()
-                    .fill(Color.secondary.opacity(0.15))
+                    .fill(Color.primary.opacity(guideOpacity))
                     .frame(width: 1)
 
                 if let token = engine.currentToken {

@@ -11,7 +11,7 @@ Trigger: press a configurable hotkey **twice** in quick succession (default `⌘
 1. Download `Allegro-<version>.dmg` from the [Releases](../../releases) page.
 2. Open it and drag **Allegro** into **Applications**.
 3. First launch: because the build isn't signed with an Apple Developer ID, Gatekeeper will block it. Pick one:
-   - **macOS 13 / 14 (Ventura, Sonoma):** right-click Allegro in Applications → **Open** → confirm.
+   - **macOS 14 (Sonoma):** right-click Allegro in Applications → **Open** → confirm.
    - **macOS 15+ (Sequoia, Tahoe):** double-click and dismiss the warning, then go to **System Settings → Privacy & Security**, scroll to "Allegro was blocked…" and click **Open Anyway**. Launch it once more.
 4. macOS will then ask for **Accessibility** permission — grant it under **System Settings → Privacy & Security → Accessibility**. Allegro needs this to read your text selection.
 
