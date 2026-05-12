@@ -28,6 +28,35 @@ final class AppState: ObservableObject {
             self?.handleTrigger()
         }
         hotkey?.start()
+
+        // Register Allegro in System Settings → Privacy & Security →
+        // Accessibility on every launch (no-op once already trusted).
+        // Crucially this does NOT surface Apple's permission prompt —
+        // that prompt is fire-and-forget and stays on screen even after
+        // the user grants permission via the Settings toggle. We show
+        // our own NSAlert instead (below), which we control and which
+        // closes when the user clicks any button.
+        SelectionGrabber.registerForAccessibilitySilently()
+        if !Self.isRunningUnderXCTest && !SelectionGrabber.isTrustedSilently() {
+            // Defer one run-loop tick so the menu-bar icon has been
+            // shown before the alert pops in.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard let self, !SelectionGrabber.isTrustedSilently() else { return }
+                self.presentAccessibilityAlert()
+            }
+        }
+    }
+
+    /// XCTest hosts our app to run unit tests, then waits for the
+    /// runner to call `xctest_main`. If our launch path pops a modal
+    /// NSAlert (which `presentAccessibilityAlert` does), the test
+    /// runner never gets control and the suite times out with
+    /// "Test runner never began executing tests after launching".
+    /// `XCTestConfigurationFilePath` is set in the environment by
+    /// XCTest only — production launches don't see it.
+    private static var isRunningUnderXCTest: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
     func handleTrigger() {
@@ -178,10 +207,11 @@ final class AppState: ObservableObject {
 
     private func presentAccessibilityAlert() {
         let alert = NSAlert()
-        alert.messageText = "Accessibility permission required"
-        alert.informativeText = "Allegro needs Accessibility access to read the text you have selected. Open System Settings → Privacy & Security → Accessibility and enable Allegro, then try again."
+        alert.messageText = "Allegro needs Accessibility access"
+        alert.informativeText = "Allegro reads the text you have selected by simulating ⌘C. macOS gates that behind the Accessibility permission. Open System Settings → Privacy & Security → Accessibility and toggle Allegro on — your hotkey will be live immediately, no relaunch needed."
         alert.addButton(withTitle: "Open System Settings")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "Later")
+        NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                 NSWorkspace.shared.open(url)
