@@ -37,7 +37,7 @@ final class AppState: ObservableObject {
         // our own NSAlert instead (below), which we control and which
         // closes when the user clicks any button.
         SelectionGrabber.registerForAccessibilitySilently()
-        if !SelectionGrabber.isTrustedSilently() {
+        if !Self.isRunningUnderXCTest && !SelectionGrabber.isTrustedSilently() {
             // Defer one run-loop tick so the menu-bar icon has been
             // shown before the alert pops in.
             Task { @MainActor [weak self] in
@@ -46,6 +46,17 @@ final class AppState: ObservableObject {
                 self.presentAccessibilityAlert()
             }
         }
+    }
+
+    /// XCTest hosts our app to run unit tests, then waits for the
+    /// runner to call `xctest_main`. If our launch path pops a modal
+    /// NSAlert (which `presentAccessibilityAlert` does), the test
+    /// runner never gets control and the suite times out with
+    /// "Test runner never began executing tests after launching".
+    /// `XCTestConfigurationFilePath` is set in the environment by
+    /// XCTest only — production launches don't see it.
+    private static var isRunningUnderXCTest: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 
     func handleTrigger() {
