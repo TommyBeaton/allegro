@@ -29,8 +29,8 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild test \
-            -project Speedread.xcodeproj \
-            -scheme Speedread \
+            -project Allegro.xcodeproj \
+            -scheme Allegro \
             -destination 'platform=macOS,arch=arm64' \
             -resultBundlePath TestResults \
             | tee xcodebuild.log
