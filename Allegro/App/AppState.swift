@@ -28,6 +28,19 @@ final class AppState: ObservableObject {
             self?.handleTrigger()
         }
         hotkey?.start()
+
+        // Surface the Accessibility prompt on launch, not on first
+        // hotkey use. The first call to AXIsProcessTrustedWithOptions
+        // with kAXTrustedCheckOptionPrompt:true both registers Allegro
+        // in System Settings → Privacy & Security → Accessibility AND
+        // shows Apple's permission prompt. Doing this on launch means
+        // users can finish permission setup before they ever try to
+        // read, and the Accessibility list has an "Allegro" row
+        // waiting to be toggled on (rather than appearing only after
+        // they try the shortcut).
+        if !SelectionGrabber.isTrustedSilently() {
+            _ = SelectionGrabber.ensureAccessibilityTrusted()
+        }
     }
 
     func handleTrigger() {
