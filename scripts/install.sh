@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build Speedread in Release config and install it to /Applications.
+# Build Allegro in Release config and install it to /Applications.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-DEST="/Applications/Speedread.app"
+DEST="/Applications/Allegro.app"
 BUILD_DIR="build"
 
 echo "→ Regenerating Xcode project"
@@ -12,14 +12,14 @@ xcodegen generate >/dev/null
 
 echo "→ Building Release"
 xcodebuild \
-    -project Speedread.xcodeproj \
-    -scheme Speedread \
+    -project Allegro.xcodeproj \
+    -scheme Allegro \
     -configuration Release \
     -derivedDataPath "$BUILD_DIR" \
     -quiet \
     build
 
-APP="$BUILD_DIR/Build/Products/Release/Speedread.app"
+APP="$BUILD_DIR/Build/Products/Release/Allegro.app"
 if [[ ! -d "$APP" ]]; then
     echo "Build succeeded but $APP not found." >&2
     exit 1
@@ -28,7 +28,7 @@ fi
 echo "→ Installing to $DEST"
 if [[ -d "$DEST" ]]; then
     # If the previous install is running, terminate it so cp can replace it.
-    pkill -x Speedread 2>/dev/null || true
+    pkill -x Allegro 2>/dev/null || true
     rm -rf "$DEST"
 fi
 cp -R "$APP" "$DEST"
@@ -40,5 +40,5 @@ find "$DEST" -print0 | xargs -0 xattr -d com.apple.quarantine 2>/dev/null || tru
 echo "→ Launching"
 open "$DEST"
 
-echo "✓ Installed Speedread to $DEST"
-echo "  (search for 'Speedread' in Spotlight, or pin it from /Applications)"
+echo "✓ Installed Allegro to $DEST"
+echo "  (search for 'Allegro' in Spotlight, or pin it from /Applications)"

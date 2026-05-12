@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for taking a look. Speedread is a small side project, so reviews and releases happen when I have a free evening — but contributions are welcome and I'll do my best to engage with anything thoughtful.
+Thanks for taking a look. Allegro is a small side project, so reviews and releases happen when I have a free evening — but contributions are welcome and I'll do my best to engage with anything thoughtful.
 
 ## A good fit
 
@@ -18,15 +18,15 @@ For anything bigger — new reading modes, new third-party dependencies, broad r
 ```sh
 brew install xcodegen
 xcodegen generate
-open Speedread.xcodeproj
+open Allegro.xcodeproj
 ```
 
 Run the tests in Xcode (`⌘U`) or from the terminal:
 
 ```sh
 xcodebuild test \
-  -project Speedread.xcodeproj \
-  -scheme Speedread \
+  -project Allegro.xcodeproj \
+  -scheme Allegro \
   -destination 'platform=macOS'
 ```
 

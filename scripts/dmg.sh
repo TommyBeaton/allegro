@@ -6,26 +6,26 @@
 # DMG suitable for public distribution, set:
 #
 #   DEV_ID="Developer ID Application: Your Name (TEAMID)"
-#   NOTARY_PROFILE="speedread-notary"   # stored via `xcrun notarytool store-credentials`
+#   NOTARY_PROFILE="allegro-notary"   # stored via `xcrun notarytool store-credentials`
 #
 # Both require a paid Apple Developer Program account.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Speedread/Info.plist 2>/dev/null || echo "0.1.0")
+VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Allegro/Info.plist 2>/dev/null || echo "0.1.0")
 BUILD_DIR="build"
-APP="$BUILD_DIR/Build/Products/Release/Speedread.app"
+APP="$BUILD_DIR/Build/Products/Release/Allegro.app"
 STAGE="$BUILD_DIR/dmg-stage"
-DMG="$BUILD_DIR/Speedread-$VERSION.dmg"
+DMG="$BUILD_DIR/Allegro-$VERSION.dmg"
 
 echo "→ Regenerating Xcode project"
 xcodegen generate >/dev/null
 
 echo "→ Building Release"
 xcodebuild \
-    -project Speedread.xcodeproj \
-    -scheme Speedread \
+    -project Allegro.xcodeproj \
+    -scheme Allegro \
     -configuration Release \
     -derivedDataPath "$BUILD_DIR" \
     -quiet \
@@ -56,7 +56,7 @@ ln -s /Applications "$STAGE/Applications"
 echo "→ Building $DMG"
 rm -f "$DMG"
 hdiutil create \
-    -volname "Speedread $VERSION" \
+    -volname "Allegro $VERSION" \
     -srcfolder "$STAGE" \
     -ov \
     -format UDZO \
