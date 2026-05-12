@@ -29,17 +29,22 @@ final class AppState: ObservableObject {
         }
         hotkey?.start()
 
-        // Surface the Accessibility prompt on launch, not on first
-        // hotkey use. The first call to AXIsProcessTrustedWithOptions
-        // with kAXTrustedCheckOptionPrompt:true both registers Allegro
-        // in System Settings → Privacy & Security → Accessibility AND
-        // shows Apple's permission prompt. Doing this on launch means
-        // users can finish permission setup before they ever try to
-        // read, and the Accessibility list has an "Allegro" row
-        // waiting to be toggled on (rather than appearing only after
-        // they try the shortcut).
+        // Register Allegro in System Settings → Privacy & Security →
+        // Accessibility on every launch (no-op once already trusted).
+        // Crucially this does NOT surface Apple's permission prompt —
+        // that prompt is fire-and-forget and stays on screen even after
+        // the user grants permission via the Settings toggle. We show
+        // our own NSAlert instead (below), which we control and which
+        // closes when the user clicks any button.
+        SelectionGrabber.registerForAccessibilitySilently()
         if !SelectionGrabber.isTrustedSilently() {
-            _ = SelectionGrabber.ensureAccessibilityTrusted()
+            // Defer one run-loop tick so the menu-bar icon has been
+            // shown before the alert pops in.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard let self, !SelectionGrabber.isTrustedSilently() else { return }
+                self.presentAccessibilityAlert()
+            }
         }
     }
 
@@ -191,10 +196,11 @@ final class AppState: ObservableObject {
 
     private func presentAccessibilityAlert() {
         let alert = NSAlert()
-        alert.messageText = "Accessibility permission required"
-        alert.informativeText = "Allegro needs Accessibility access to read the text you have selected. Open System Settings → Privacy & Security → Accessibility and enable Allegro, then try again."
+        alert.messageText = "Allegro needs Accessibility access"
+        alert.informativeText = "Allegro reads the text you have selected by simulating ⌘C. macOS gates that behind the Accessibility permission. Open System Settings → Privacy & Security → Accessibility and toggle Allegro on — your hotkey will be live immediately, no relaunch needed."
         alert.addButton(withTitle: "Open System Settings")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "Later")
+        NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                 NSWorkspace.shared.open(url)

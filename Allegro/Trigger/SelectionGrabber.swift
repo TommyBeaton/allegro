@@ -66,6 +66,33 @@ enum SelectionGrabber {
         AXIsProcessTrusted()
     }
 
+    /// Adds Allegro to System Settings → Privacy & Security → Accessibility
+    /// *without* showing Apple's permission prompt. The prompt is a
+    /// fire-and-forget dialog that doesn't auto-dismiss when the user
+    /// grants permission via the Settings toggle, so we'd rather present
+    /// our own alert (which we can size, brand, and close on demand).
+    ///
+    /// Two complementary calls — both have a registration side effect on
+    /// recent macOS:
+    ///   1. AXIsProcessTrustedWithOptions with prompt:false — querying
+    ///      trust with explicit prompt:false registers without dialog.
+    ///   2. Any AX API call from the process — making AXUIElement queries
+    ///      is what historically caused the AX subsystem to record the
+    ///      bundle id.
+    static func registerForAccessibilitySilently() {
+        let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let opts = [promptKey: false] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(opts)
+
+        let systemWide = AXUIElementCreateSystemWide()
+        var focused: AnyObject?
+        _ = AXUIElementCopyAttributeValue(
+            systemWide,
+            kAXFocusedApplicationAttribute as CFString,
+            &focused
+        )
+    }
+
     // MARK: - Cmd+C synthesis
 
     private static func postCommandC() {
